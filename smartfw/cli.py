@@ -1,7 +1,9 @@
 #Execution of full pipeline: Capture, Feautres, Model, Firewall, and API
 
+from __future__ import annotations
 import logging, queue, signal, threading
-from smartfw import CaptureEngine, AnomalyModel, Firewall, build_app, THREASHOLD
+from smartfw.features import flow_to_vectors, Flow
+from smartfw import CaptureEngine, AnomalyModel, Firewall, build_app, THREASHOLD,
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(name)s | %(levelname)s | %(message)s")
@@ -9,7 +11,7 @@ log = logging.getLogger("smartfw.cli")
 
 
 def main():
-    q: "queue.Queue[smartfw.Flow]" = queue.Queue(maxsize=10_000)
+    q: "queue.Queue[Flow]" = queue.Queue(maxsize=10_000)
     model = AnomalyModel(); model.load_or_create()
     fw = Firewall(); fw.start()
     capture = CaptureEngine(q); capture.start()
@@ -18,7 +20,7 @@ def main():
     def worker():
         while True:
             flow = q.get()
-            vec = flow_to_vector(flow)
+            vec = flow_to_vectors(flow)
             if vec is None:
                 continue
             score = model.score(vec)
