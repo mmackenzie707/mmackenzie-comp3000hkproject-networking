@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 import logging, queue, signal, threading
-from smartfw.features import flow_to_vectors, Flow
-from smartfw import CaptureEngine, AnomalyModel, Firewall, build_app, THREASHOLD,
+from smartfw.features import flow_to_vector, Flow
+from smartfw import CaptureEngine, AnomalyModel, Firewall, build_app, THRESHOLD
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(name)s | %(levelname)s | %(message)s")
@@ -16,15 +16,17 @@ def main():
     fw = Firewall(); fw.start()
     capture = CaptureEngine(q); capture.start()
 
+    from ui.auth import init_db
+    init_db()
 
     def worker():
         while True:
             flow = q.get()
-            vec = flow_to_vectors(flow)
+            vec = flow_to_vector(flow)
             if vec is None:
                 continue
             score = model.score(vec)
-            if score < THREASHOLD:
+            if score < THRESHOLD:
                 bad_ip = flow.five_tuple[0] if flow.dir_list[0] == 1 else flow.five_tuple [3]
                 fw.block(bad_ip)
 
@@ -53,6 +55,3 @@ def main():
 
     log.info("SmartFW modular ready")
     threading.Event().wait()
-
-if __name__ == "__main__":
-    main()

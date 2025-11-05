@@ -1,12 +1,15 @@
 from __future__ import annotations
-import logging, os, time, threading, pandas as pd, numpy as np
+import logging, os, time, threading, signal, pandas as pd, numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from joblib import dump, load
 from .config import MODEL_PATH, SCALER_PATH, LOG_PATH, RETRAIN_INTERVAL_SEC
+from pathlib import Path
 
 
 log = logging.getLogger(__name__)
+MODEL_FILE = Path("/models/clf.joblib")
+LAST_CHECK = 0
 
 class AnomalyModel:
     def __init__(self) -> None:
@@ -73,3 +76,31 @@ class AnomalyModel:
         Xs = self.scaler.transform(dummy)
         self.clf = IsolationForest(n_estimators=200, contamination=0.05, random_state=42)
         self.clf.fit(Xs)
+
+    
+    #Hot Reload and Supervised Learning
+    def __init__(self) -> None:
+        self._last_retrain:float = 0.0
+        threading.Thread(target=self._watch_models, daemon=True).start()
+
+    def maybe_retrain(self) -> None:
+        df = pd.read_csv(LOG_PATH, header=None, usecols=range(23))
+
+    def predict_proba(self, X: np.ndarray) -> float:
+        #Probability that flow is bad (0-1)
+        with self._lock:
+            if self.clf is None:
+                return 0.0
+            Xs = self.scaler.transform(X.reshape(1, -1))
+            raw = self.clf.decision_function(Xs)[0]
+            return float(1 / (1 + np.exp(raw + 0.5)))
+        
+    def _watch_models(self):
+        global model, scaler, LAST_CHECK
+        while True:
+            time.sleep(30)
+            if MODEL_FILE.exists() and MODEL_FILE.stat().st_mtime > LAST_CHECK:
+                with self._lock:
+                    self.load_or_create()
+                LAST_CHECK = MODEL_FILE.stat().st_mtime
+                print("Hot-loaded new supervised model")

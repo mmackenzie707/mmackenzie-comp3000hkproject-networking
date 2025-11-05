@@ -1,0 +1,13 @@
+#version: "3.9"
+services:
+  sensor:
+    build: ./sensor
+    cap_add: [NET_RAW, NET_ADMIN]
+    ports: ["5000:5000"]
+    volumes: ["/var/log:/var/log"]
+    restart: unless-stopped
+
+  ui:
+    build: ./ui
+    ports: ["8080:8080"]
+    restart: unless-stopped

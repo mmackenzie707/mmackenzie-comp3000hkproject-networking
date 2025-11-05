@@ -7,7 +7,8 @@ SCALER_PATH: str = os.getenv("SMARTFW_SCALER", "/var/lib/smartfw/scaler.joblib")
 LOG_PATH: str = os.getenv("SMARTFW_LOG", "/var/log/smartfw/features.csv")
 
 BLOCK_TIME_SEC: int = int(os.getenv("SMARTFW_BLOCK_TIME", "300"))
-THRESHOLD: float = float(os.getenv("SMARTFW_THERSHOLD", "-0.25"))
+THRESHOLD: float = float(os.getenv("SMARTFW_THRESHOLD", "-0.25"))
+CUT_OFF: float = float(os.getenv("SMARTFW_CUT_OFF", "0.80"))
 RETRAIN_INTERVAL_SEC: int = int(os.getenv("SMARTFW_RETRAIN", "86400"))
 CAPTURE_IFACE: str = os.getenv("SMARTFW_IFACE")
 

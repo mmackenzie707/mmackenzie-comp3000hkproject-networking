@@ -14,7 +14,7 @@ class Flow:
 
 N_FEATURES = 23
 
-def flow_to_vectors(flow: Flow) -> np.ndarray | None:
+def flow_to_vector(flow: Flow) -> np.ndarray | None:
     #Return 23-d float32 vector or None if flow to small
     if len(flow.pkt_list) < 2:
         return None
