@@ -1,0 +1,18 @@
+/*header*/
+.header{display:flex;align-items:center;justify-content:space-between;background:#111;padding:.4rem .6rem;font-weight:600}
+.status{width:.8rem;height:.8rem;border-radius:50%;background:var(--good)}
+.status.off{background:var(--bad)}
+
+
+/*Threshold/Whitelist*/
+.widget{background:var(--panel);padding:.5rem; border-radius:var(--radius)}
+.widget h3{margin-bottom:.4rem;font-size:.9rem;opacity:.8}
+
+
+/*Blocked List*/
+#blocked{list-style:none;font-size:.75rem}
+#blocked li{display:flex;justify-content:space-between;padding:.2rem 0;border-bottom:1px solid #333}
+#blocked .ip{font-family:monospace;color:#81c784;}
+
+/*Sparkline*/
+#spark{width:100%;height:40px;background:var(--panel);border-radius:var(--radius)}
