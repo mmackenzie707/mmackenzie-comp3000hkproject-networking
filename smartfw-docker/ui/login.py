@@ -3,20 +3,20 @@ from flask import Blueprint, render_template_string, request, redirect, url_for,
 from flask_login import (
     login_user, logout_user, login_required, LoginManager, UserMixin
 )
-from .auth import verify_user, init_db, add_user, SECRET_KEY
+from auth import verify_user, init_db, add_user, SECRET_KEY
 
 bp = Blueprint("auth", __name__, url_prefix="")
 
-class User(UserMixin):
-    def __init__(self, id):
-        self.id=id
-
-login_manager = LoginManager
+login_manager = LoginManager()
 login_manager.login_view = "auth.login"
 
 @login_manager.user_loader
 def load_user(user_id):
     return User(user_id)
+
+class User(UserMixin):
+    def __init__(self, id):
+        self.id=id
 
 @bp.route("/login", methods=["GET", "POST"])
 def login():

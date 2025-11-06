@@ -10,4 +10,5 @@ services:
   ui:
     build: ./ui
     ports: ["8080:8080"]
+    command: ["sh", "-c", "nginx & gunicorn -b 0.0.0.0:5000 app:build_app"]
     restart: unless-stopped

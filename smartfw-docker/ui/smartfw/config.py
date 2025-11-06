@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from ipaddress import ip_network
 from typing import Set
