@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  firewall:
+    build: .
+    container_name: static-firewall
+    network_mode: "host"  # Required to see host traffic
+    privileged: true      # Required for packet capture
+    cap_add:
+      - NET_ADMIN         # For network administration
+      - NET_RAW           # For raw sockets
+    volumes:
+      - ./logs:/var/log/firewall
+      - ./rules.json:/app/rules.json:ro
+    command: ["-r", "rules.json"]
+    restart: unless-stopped
