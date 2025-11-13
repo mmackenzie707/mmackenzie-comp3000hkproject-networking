@@ -1,16 +1,45 @@
 version: '3.8'
 
 services:
-  firewall:
-    build: .
-    container_name: static-firewall
-    network_mode: "host"  # Required to see host traffic
-    privileged: true      # Required for packet capture
-    cap_add:
-      - NET_ADMIN         # For network administration
-      - NET_RAW           # For raw sockets
+  flask-app:
+    build: 
+      context: ./app
+      dockerfile: Dockerfile.flask
+    ports:
+      - "5000:5000"
     volumes:
-      - ./logs:/var/log/firewall
-      - ./rules.json:/app/rules.json:ro
-    command: ["-r", "rules.json"]
-    restart: unless-stopped
+      - ./logs:/app/logs
+      - ./config:/app/config
+    depends_on:
+      - ml-service
+  
+  ml-service:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile.ml
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./config:/app/config
+  
+  batch-processor:
+    build:
+      context: ./batch
+      dockerfile: Dockerfile.batch
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    depends_on:
+      - ml-service
+  
+  # Optional: For real-time packet capture (needs host networking)
+  packet-sniffer:
+    build:
+      context: ./sniffer
+      dockerfile: Dockerfile.sniffer
+    network_mode: host
+    volumes:
+      - ./logs:/app/logs
+    privileged: true  # Required for packet capture

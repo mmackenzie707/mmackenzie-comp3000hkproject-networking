@@ -1,32 +1,33 @@
-FROM python:3.11-slim
+FROM python:3.11
 
-# Install system dependencies for packet capture
+# Install only runtime dependencies (no build tools needed for pure Python)
 RUN apt-get update && apt-get install -y \
-    libpcap-dev \
     tcpdump \
     net-tools \
-    iptables \
     && rm -rf /var/lib/apt/lists/*
 
-# Create directory for logs
-RUN mkdir -p /var/log/firewall
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash firewalluser && \
+    mkdir -p /app/logs && \
+    chown -R firewalluser:firewalluser /app
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements and install Python packages
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy pre-downloaded packages
+COPY packages/ /packages/
+
+# Install Python packages offline
+RUN pip install --no-index --find-links=/packages scapy psutil
+
+# Clean up packages
+RUN rm -rf /packages
 
 # Copy application code
-COPY *.py ./
-COPY rules.json ./
+COPY --chown=firewalluser:firewalluser *.py ./
+COPY --chown=firewalluser:firewalluser rules.json ./
 
-# Make the script executable
-RUN chmod +x firewall.py
+# Fix permissions
+RUN chmod 755 /app/logs
 
-# Create non-root user (though we need privileged mode for packet capture)
-RUN useradd -m -u 1000 firewalluser
-
-# Set entrypoint
+USER firewalluser
 ENTRYPOINT ["python3", "firewall.py"]

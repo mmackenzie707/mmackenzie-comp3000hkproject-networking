@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firewall Monitor GUI</title>
+    <style>
+        /* Same CSS as above */
+    </style>
+</head>
+<body>
+    <!-- Same HTML structure as above -->
+    <script>
+        // Update API URLs to point to backend
+        const API_BASE = "http://localhost:8000";
+        
+        async function refreshData() {
+            const filter = document.getElementById('filter-select').value;
+            const url = filter === 'all' ? `${API_BASE}/api/events` : `${API_BASE}/api/events?action=${filter}`;
+            // ... rest of script
+        }
+    </script>
+</body>
+</html>

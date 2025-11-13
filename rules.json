@@ -6,5 +6,5 @@
   ],
   "blocked_protocols": [],
   "blocked_ports": [23, 135, 139, 445, 1433, 3306],
-  "description": "Block dangerous ports and specific IPs"
+  "description": "Podman-optimized firewall rules"
 }
