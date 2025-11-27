@@ -1,41 +1,31 @@
-# docker-compose.yml - Rootless services (run with: podman-compose up -d)
 version: '3.8'
 
 services:
-  flask-app:
-    build:
-      context: ./flask-app
-      dockerfile: Dockerfile.flask
-    image: network-ml-monitor-flask:latest
-    container_name: flask-app
-    ports:
-      - "5000:5000"
+  suricata:
+    image: docker.io/jasonish/suricata:latest
+    container_name: suricata
+    network_mode: host
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     volumes:
-      - ./logs:/app/logs:Z
-      - ./config:/app/config:Z
-    environment:
-      - FLASK_ENV=production
+      - ./suricata/suricata.yaml:/etc/suricata/suricata.yaml
+      - ./suricata/signatures.rules:/etc/suricata/rules/suratures.rules
+      - ./logs/suricata:/var/log/suricata
+    command: ["-c", "/etc/suricata/suricata.yaml", "-s", "/etc/suricata/rules/signatures.rules", "-i", "eth0"]
     restart: unless-stopped
-    networks:
-      - monitor-net
 
   ml-service:
-    build:
-      context: ./ml-service
-      dockerfile: Dockerfile.ml
-    image: network-ml-monitor-ml:latest
-    container_name: ml-service
-    ports:
-      - "8000:8000"
+    build: ./ml-service
+    container_name: ml-processor
+    network_mode: host
+    depends_on:
+      - suricata
     volumes:
-      - ./models:/app/models:Z
-      - ./logs:/app/logs:Z
-      - ./config:/app/config:Z
-    environment:
-      - MODEL_PATH=/app/models/threat_model.pkl
+      - ./logs/suricata:/app/logs
+      - ./models:/app/models
     restart: unless-stopped
-    networks:
-      - monitor-net
 
 networks:
   monitor-net:

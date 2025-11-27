@@ -6,13 +6,15 @@ services:
     build:
       context: ./packet-sniffer
       dockerfile: Dockerfile
+      network: host
     image: network-ml-monitor-sniffer:latest
     container_name: packet-sniffer
     cap_add:
       - NET_ADMIN
       - NET_RAW
-    network: host
-    network_mode: host
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     volumes:
       - ./logs:/app/logs:Z
     environment:
@@ -24,12 +26,14 @@ services:
     build:
       context: ./batch-processor
       dockerfile: Dockerfile
+      network: host
     image: network-ml-monitor-batch:latest
     container_name: batch-processor
     cap_add:
       - NET_ADMIN
-    network: host
-    network_mode: host
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     volumes:
       - ./logs:/app/logs:Z
       - ./models:/app/models:Z
@@ -40,11 +44,13 @@ services:
     restart: unless-stopped
     depends_on:
       - packet-sniffer
+    privileged: true
 
   ml-service:
     build:
       context: ./ml-service
       dockerfile: Dockerfile
+      network: host
     image: network-ml-monitor-ml:latest
     container_name: ml-service-rootful
     ports:
@@ -55,6 +61,7 @@ services:
       - ./config:/app/config:Z
     environment:
       - MODEL_PATH=/app/models/threat_model.pkl
-    network: host
-    network_mode: host
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     restart: unless-stopped

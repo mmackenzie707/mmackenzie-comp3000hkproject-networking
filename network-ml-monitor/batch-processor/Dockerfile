@@ -1,6 +1,11 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
-# Install iptables for IP blocking
+# Fix DNS issues at build time
+RUN echo "deb http://mirrors.cloud.google.com/debian bookworm main" > /etc/apt/sources.list && \
+    echo "deb http://mirrors.cloud.google.com/debian bookworm-updates main" >> /etc/apt/sources.list && \
+    echo "deb http://mirrors.cloud.google.com/debian-security bookworm-security main" >> /etc/apt/sources.list
+    
+# Install system packages (iptables, sqlite)
 RUN apt-get update && apt-get install -y \
     iptables \
     sqlite3 \
@@ -8,18 +13,17 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Install ML dependencies
+# Install Python packages
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy processor code
+# Copy code
 COPY main.py /app/
 COPY threat_detection.py /app/
 
 # Create directories
 RUN mkdir -p /app/logs /app/models /app/config
 
-# Run as root (required for iptables)
-USER root
+# No need for USER root - already root by default
 
 CMD ["python", "main.py"]

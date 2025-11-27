@@ -1,11 +1,10 @@
 FROM python:3.11-slim
 
 # Install network tools
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     tcpdump \
     libpcap-dev \
-    sqlite3 \
-    && rm -rf /var/lib/apt/lists/*
+    sqlite
 
 WORKDIR /app
 
