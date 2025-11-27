@@ -1,0 +1,60 @@
+# docker-compose.sudo.yml - Rootful services (run with: sudo podman-compose -f docker-compose.sudo.yml up -d)
+version: '3.8'
+
+services:
+  packet-sniffer:
+    build:
+      context: ./packet-sniffer
+      dockerfile: Dockerfile
+    image: network-ml-monitor-sniffer:latest
+    container_name: packet-sniffer
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    network: host
+    network_mode: host
+    volumes:
+      - ./logs:/app/logs:Z
+    environment:
+      - CAPTURE_INTERFACE=eth0
+      - CAPTURE_FILTER=tcp port 80 or tcp port 443 or tcp port 8080 or tcp port 8000
+    restart: unless-stopped
+
+  batch-processor:
+    build:
+      context: ./batch-processor
+      dockerfile: Dockerfile
+    image: network-ml-monitor-batch:latest
+    container_name: batch-processor
+    cap_add:
+      - NET_ADMIN
+    network: host
+    network_mode: host
+    volumes:
+      - ./logs:/app/logs:Z
+      - ./models:/app/models:Z
+      - ./config:/app/config:Z
+    environment:
+      - PYTHONPATH=/app
+      - MODEL_PATH=/app/models/threat_model.pkl
+    restart: unless-stopped
+    depends_on:
+      - packet-sniffer
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    image: network-ml-monitor-ml:latest
+    container_name: ml-service-rootful
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:Z
+      - ./logs:/app/logs:Z
+      - ./config:/app/config:Z
+    environment:
+      - MODEL_PATH=/app/models/threat_model.pkl
+    network: host
+    network_mode: host
+    restart: unless-stopped

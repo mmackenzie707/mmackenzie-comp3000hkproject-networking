@@ -1,20 +1,22 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install curl for health checks
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Install Python ML packages
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Create models directory
-RUN mkdir -p /app/models
+# Copy service code
+COPY . /app/
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
-
-COPY ml_service.py /app/ml_service.py
-COPY train_models.py /app/train_models.py
+# Create directories
+RUN mkdir -p /app/models /app/logs /app/config
 
 EXPOSE 8000
-CMD ["uvicorn", "ml_service:app", "--host", "0.0.0.0", "--port", "8000"]
+
+CMD ["python", "main.py"]

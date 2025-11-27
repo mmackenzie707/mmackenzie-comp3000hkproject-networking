@@ -1,18 +1,20 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
+
+# Install minimal dependencies
+RUN apt-get update && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-# Create logs directory BEFORE any Python code runs
-RUN mkdir -p /app/logs && chmod 755 /app/logs
 
 # Install Python packages
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY app.py .
-COPY middleware middleware/
-COPY packet_capture packet_capture/
+# Copy application
+COPY . /app/
+
+# Create directories
+RUN mkdir -p /app/logs /app/config
 
 EXPOSE 5000
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "app:app"]
+
+CMD ["python", "app.py"]

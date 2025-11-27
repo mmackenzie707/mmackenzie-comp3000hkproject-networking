@@ -1,13 +1,21 @@
+# docker-compose.yml - Rootless services (run with: podman-compose up -d)
+version: '3.8'
+
 services:
   flask-app:
     build:
       context: ./flask-app
       dockerfile: Dockerfile.flask
+    image: network-ml-monitor-flask:latest
+    container_name: flask-app
     ports:
       - "5000:5000"
     volumes:
-      - ./logs:/app/logs
-      - ./config:/app/config
+      - ./logs:/app/logs:Z
+      - ./config:/app/config:Z
+    environment:
+      - FLASK_ENV=production
+    restart: unless-stopped
     networks:
       - monitor-net
 
@@ -15,48 +23,19 @@ services:
     build:
       context: ./ml-service
       dockerfile: Dockerfile.ml
+    image: network-ml-monitor-ml:latest
+    container_name: ml-service
     ports:
       - "8000:8000"
     volumes:
-      - ./models:/app/models
-      - ./logs:/app/logs
-      - ./config:/app/config
+      - ./models:/app/models:Z
+      - ./logs:/app/logs:Z
+      - ./config:/app/config:Z
+    environment:
+      - MODEL_PATH=/app/models/threat_model.pkl
+    restart: unless-stopped
     networks:
       - monitor-net
-
-  batch-processor:
-    build:
-      context: ./batch-processor
-      dockerfile: Dockerfile.batch
-    volumes:
-      - ./models:/app/models
-      - ./logs:/app/logs
-      - ./config:/app/config
-    depends_on:
-      - ml-service
-    networks:
-      - monitor-net
-
-  # FIXED: Remove 'networks' when using 'network_mode: host'
-packet-sniffer:
-  build:
-    context: ./packet-sniffer
-    dockerfile: Dockerfile.sniffer
-  volumes:
-    - ./logs:/app/logs
-  network_mode: host
-  privileged: true
-  cap_add:
-    - NET_RAW
-    - NET_ADMIN
-  environment:
-    - CAPTURE_INTERFACE=eth0  # Change to your interface
-  restart: unless-stopped  # Auto-restart on failure
-  healthcheck:
-    test: ["CMD", "pgrep", "python"]
-    interval: 30s
-    timeout: 10s
-    retries: 3
 
 networks:
   monitor-net:

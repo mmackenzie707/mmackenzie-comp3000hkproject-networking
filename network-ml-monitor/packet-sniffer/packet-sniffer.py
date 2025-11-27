@@ -2,6 +2,7 @@ import sqlite3
 import time
 import sys
 import os
+import threading
 from scapy.all import sniff, IP, TCP, UDP, get_if_list
 
 DB_PATH = "/app/logs/traffic.db"
