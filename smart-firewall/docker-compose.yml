@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  capture:
+    build:
+      context: .
+      dockerfile: capture-module/Dockerfile
+    network_mode: host
+    container_name: smart-firewall-capture
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./data/captures:/data/captures:Z
+    environment:
+      - CAPTURE_INTERFACE=${CAPTURE_INTERFACE:-eth0}
+    restart: unless-stopped
+
+  preprocessing:
+    build:
+      context: .
+      dockerfile: preprocessing-module/Dockerfile
+    network_mode: bridge
+    dns: 
+      - 8.8.8.8
+      - 1.1.1.1
+    container_name: smart-firewall-preprocessing
+    depends_on:
+      - capture
+    volumes:
+      - ./data/captures:/data/captures:ro,Z
+      - ./data/flows:/data/flows:Z
+    environment:
+      - FLOW_TIMEOUT=${FLOW_TIMEOUT:-300}
+    restart: unless-stopped
+
+  ml-engine:
+    build:
+      context: .
+      dockerfile: ml-engine-module/Dockerfile
+    container_name: smart-firewall-ml-engine
+    network_mode: bridge
+    dns: 
+      - 8.8.8.8
+      - 1.1.1.1
+    depends_on:
+      - preprocessing
+    volumes:
+      - ./data/flows:/data/flows:ro,Z
+      - ./data/results:/data/results:Z
+      - ./models:/models:ro,Z
+    environment:
+      - ML_MODEL_TYPE=${ML_MODEL_TYPE:-cnn}
+      - ML_MODEL_PATH=/models/firewall_model.pth
+      - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD:-0.8}
+    restart: unless-stopped
+
+  action:
+    build:
+      context: .
+      dockerfile: action-module/Dockerfile
+    network_mode: host
+    container_name: smart-firewall-action
+    depends_on:
+      - ml-engine
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./data/results:/data/results:ro,Z
+      - ./data/logs:/data/logs:Z
+    environment:
+      - ENABLE_BLOCKING=${ENABLE_BLOCKING:-false}
+      - ACTION_LOG=/data/logs/actions.log
+    restart: unless-stopped
+
+volumes:
+  capture_data:
+  flow_data:
+  result_data:
+  log_data:
+  model_data:
